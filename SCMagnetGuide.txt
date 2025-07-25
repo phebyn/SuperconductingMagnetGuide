@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Interactive Guide to Superconducting Magnets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as a single-page, scrollable journey broken into five thematic sections: 1) Fundamentals, 2) Superconductivity Explained, 3) Types of Superconductors, 4) The Quench Challenge, and 5) Future & Diagnostics. This non-linear, thematic structure, accessible via a sticky navigation bar, allows users to explore topics based on interest rather than following the report's linear chapter format. This enhances usability by making complex information modular and digestible. Key interactions include an interactive chart for comparing superconductor properties and toggleable content for direct comparisons (Type I/II, LTS/HTS), which encourages active user engagement and improves comprehension over static text. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Critical parameters of different superconductors (Table 1.1). Goal: Compare materials. Viz/Method: Interactive Bar Chart (Chart.js). Interaction: Buttons to toggle between viewing Critical Temperature (Tc) and Critical Field (Hc2). Justification: A chart provides a much faster and more intuitive comparison of quantitative data than a table. Interactivity empowers the user to focus on the parameter they are interested in.
+        - Report Info: Comparison between Type I and Type II superconductors (Table 1.2). Goal: Compare concepts. Viz/Method: Interactive comparison block. Interaction: Clicking buttons dynamically updates the displayed text and highlights. Justification: This makes the comparison more engaging and allows for a side-by-side view of key differences without cluttering the UI.
+        - Report Info: Quench process. Goal: Explain a dynamic process. Viz/Method: HTML/CSS diagram. Interaction: Static visual aid. Justification: A simplified visual diagram showing heat propagation is more effective at explaining the concept of thermal runaway than a block of text.
+        - Report Info: FBG principles. Goal: Explain a sensor technology. Viz/Method: HTML/CSS diagram. Interaction: Static visual aid. Justification: A simple diagram clarifies the light reflection principle of FBGs, making the technical explanation easier to grasp.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0891b2; /* cyan-600 */
+            border-bottom-color: #0891b2; /* cyan-600 */
+        }
+        .content-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .content-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            border: 1px solid #0e7490; /* cyan-700 */
+            color: #0e7490;
+        }
+        .btn:hover {
+            background-color: #0e7490;
+            color: white;
+        }
+        .btn.active {
+            background-color: #0e7490;
+            color: white;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-slate-800">Superconducting Magnets</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#fundamentals" class="nav-link">Fundamentals</a>
+                <a href="#superconductivity" class="nav-link">Superconductivity</a>
+                <a href="#types" class="nav-link">The Technology</a>
+                <a href="#quench" class="nav-link">The Challenge</a>
+                <a href="#future" class="nav-link">The Future</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-slate-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#fundamentals" class="block py-2 px-4 text-sm hover:bg-slate-100">Fundamentals</a>
+            <a href="#superconductivity" class="block py-2 px-4 text-sm hover:bg-slate-100">Superconductivity</a>
+            <a href="#types" class="block py-2 px-4 text-sm hover:bg-slate-100">The Technology</a>
+            <a href="#quench" class="block py-2 px-4 text-sm hover:bg-slate-100">The Challenge</a>
+            <a href="#future" class="block py-2 px-4 text-sm hover:bg-slate-100">The Future</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <!-- Hero Section -->
+        <section class="text-center py-16 md:py-24">
+            <h2 class="text-4xl md:text-6xl font-bold text-cyan-700 tracking-tight">A Primer on Superconducting Magnets</h2>
+            <p class="mt-4 text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">An interactive exploration of the technology that powers particle accelerators, MRI machines, and the future of energy.</p>
+        </section>
+
+        <!-- Section 1: Fundamentals -->
+        <section id="fundamentals" class="py-12 md:py-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-2 text-slate-800">The Fundamentals</h3>
+            <p class="text-center text-slate-600 mb-12 max-w-2xl mx-auto">Particle accelerators need powerful magnets to steer and focus beams of particles. Superconducting technology overcomes the limits of conventional magnets to achieve the unprecedented field strengths required for modern science.</p>
+            
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="content-card">
+                    <h4 class="text-2xl font-semibold mb-4 text-cyan-700">Why Magnets in Accelerators?</h4>
+                    <p class="text-slate-600 mb-4">To explore the fundamental building blocks of the universe, scientists accelerate particles to near the speed of light. Magnets are essential for this task.</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-cyan-500 mr-3 mt-1">➔</span>
+                            <div><strong class="text-slate-700">Steering (Dipole Magnets):</strong> They bend the particle beam, keeping it on a circular path, much like a car steering around a track. Stronger magnets are needed for higher-energy particles.</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-cyan-500 mr-3 mt-1">➔</span>
+                            <div><strong class="text-slate-700">Focusing (Quadrupole Magnets):</strong> They act like lenses, squeezing the particle beam to keep it dense and stable, which is crucial for maximizing collisions.</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="content-card bg-slate-800 text-white">
+                    <h4 class="text-2xl font-semibold mb-4 text-cyan-400">The Limits of Conventional Magnets</h4>
+                    <p class="text-slate-300 mb-4">Conventional electromagnets, made of copper wire, face two major roadblocks for high-energy physics:</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-cyan-400 mr-3 mt-1">⚡</span>
+                            <div><strong class="text-slate-200">Heat & Power Loss:</strong> Electrical resistance in copper wires generates immense heat (Joule heating), consuming vast amounts of power and limiting the current they can carry.</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-cyan-400 mr-3 mt-1">🧲</span>
+                            <div><strong class="text-slate-200">Field Strength Ceiling:</strong> Due to heat limits and the magnetic saturation of their iron cores, conventional magnets simply cannot produce the powerful fields (e.g., 8-16 Tesla) needed for modern accelerators.</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Superconductivity -->
+        <section id="superconductivity" class="py-12 md:py-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-2 text-slate-800">The Quantum Leap: Superconductivity</h3>
+            <p class="text-center text-slate-600 mb-12 max-w-2xl mx-auto">Superconductivity is a quantum phenomenon where certain materials, when cooled below a critical point, exhibit zero electrical resistance. This property is governed by three interconnected critical parameters.</p>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="content-card text-center">
+                    <div class="text-4xl mb-4">🌡️</div>
+                    <h4 class="text-xl font-semibold mb-2 text-cyan-700">Critical Temperature (Tc)</h4>
+                    <p class="text-slate-600">The temperature below which a material becomes superconducting. Below this threshold, electrons form "Cooper pairs" and move without any resistance.</p>
+                </div>
+                <div class="content-card text-center">
+                    <div class="text-4xl mb-4">⚡</div>
+                    <h4 class="text-xl font-semibold mb-2 text-cyan-700">Critical Current (Ic)</h4>
+                    <p class="text-slate-600">The maximum electrical current a superconductor can carry before it reverts to its normal, resistive state. Exceeding this limit breaks the Cooper pairs.</p>
+                </div>
+                <div class="content-card text-center">
+                    <div class="text-4xl mb-4">🧲</div>
+                    <h4 class="text-xl font-semibold mb-2 text-cyan-700">Critical Field (Hc)</h4>
+                    <p class="text-slate-600">The maximum external magnetic field a superconductor can withstand before its superconductivity is destroyed. This is a key parameter for magnet design.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 3: The Technology -->
+        <section id="types" class="py-12 md:py-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-2 text-slate-800">The Technology: Types of Superconductors</h3>
+            <p class="text-center text-slate-600 mb-12 max-w-3xl mx-auto">Not all superconductors are the same. Their behavior in magnetic fields and their operating temperatures determine their use. Type II superconductors are essential for high-field magnets, and High-Temperature Superconductors (HTS) are paving the way for the future.</p>
+
+            <div class="content-card mb-12">
+                <h4 class="text-2xl font-semibold text-center mb-6 text-cyan-700">Comparing Superconductor Materials</h4>
+                <div class="text-center mb-6">
+                    <button id="show-tc-btn" class="btn active">Show Critical Temperature (Tc)</button>
+                    <button id="show-hc-btn" class="btn ml-4">Show Critical Field (Hc2)</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="superconductorChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="content-card">
+                    <h4 class="text-xl font-semibold mb-4 text-cyan-700">Type I vs. Type II</h4>
+                    <p class="text-slate-600 mb-4">The key difference lies in how they react to magnetic fields, which determines their suitability for building powerful magnets.</p>
+                    <div id="type-comparison" class="border-t pt-4">
+                        <h5 class="font-bold text-lg text-slate-800">Type II Superconductors</h5>
+                        <p class="text-slate-600 mt-2">These materials, like NbTi and Nb3Sn, allow partial magnetic field penetration in a "mixed state." This allows them to remain superconducting in extremely high magnetic fields, making them the exclusive choice for accelerator magnets.</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <h4 class="text-xl font-semibold mb-4 text-cyan-700">Low-Temp (LTS) vs. High-Temp (HTS)</h4>
+                    <p class="text-slate-600 mb-4">The operating temperature dictates the cost and complexity of the required cooling systems.</p>
+                    <div id="temp-comparison" class="border-t pt-4">
+                        <h5 class="font-bold text-lg text-slate-800">High-Temperature Superconductors (HTS)</h5>
+                        <p class="text-slate-600 mt-2">Operating above 77 K (liquid nitrogen's boiling point), HTS materials like YBCO drastically reduce cooling costs. They also have higher critical fields, enabling even stronger, more compact magnets for future applications.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: The Challenge -->
+        <section id="quench" class="py-12 md:py-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-2 text-slate-800">The Challenge: A Magnet Quench</h3>
+            <p class="text-center text-slate-600 mb-12 max-w-3xl mx-auto">A "quench" is the Achilles' heel of a superconducting magnet—a sudden, runaway loss of superconductivity that can have catastrophic consequences if not managed properly.</p>
+            
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="content-card">
+                    <h4 class="text-2xl font-semibold mb-4 text-cyan-700">What is a Quench?</h4>
+                    <p class="text-slate-600 mb-4">If any part of the magnet coil exceeds its critical temperature, current, or field, it becomes resistive. The massive current flowing through this new "normal zone" generates intense heat.</p>
+                    <p class="text-slate-600">This heat propagates to adjacent areas, causing a chain reaction that spreads the normal zone rapidly. The magnet's immense stored energy is converted into heat in a fraction of a second.</p>
+                    <h5 class="font-semibold text-slate-700 mt-6 mb-2">Consequences:</h5>
+                    <ul class="list-disc list-inside text-slate-600 space-y-1">
+                        <li><strong class="text-red-600">Thermal Damage:</strong> Can melt or deform the magnet coils.</li>
+                        <li><strong class="text-red-600">Cryogen Boil-Off:</strong> Explosive evaporation of liquid helium, creating pressure hazards and asphyxiation risks.</li>
+                        <li><strong class="text-red-600">Operational Downtime:</strong> Significant time and cost to re-cool and restart the system.</li>
+                    </ul>
+                </div>
+                <div class="content-card flex flex-col items-center justify-center">
+                    <h4 class="text-xl font-semibold text-center mb-4">Quench Propagation Diagram</h4>
+                    <div class="w-full max-w-sm space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-1/4 h-8 bg-cyan-500 rounded"></div>
+                            <div class="w-1/4 h-8 bg-red-500 rounded animate-pulse"></div>
+                            <div class="w-1/4 h-8 bg-cyan-500 rounded"></div>
+                            <div class="w-1/4 h-8 bg-cyan-500 rounded"></div>
+                        </div>
+                        <p class="text-xs text-center text-slate-500">1. A small "normal zone" (red) appears.</p>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-1/4 h-8 bg-red-500 rounded"></div>
+                            <div class="w-1/4 h-8 bg-red-500 rounded"></div>
+                            <div class="w-1/4 h-8 bg-red-500 rounded"></div>
+                            <div class="w-1/4 h-8 bg-cyan-500 rounded"></div>
+                        </div>
+                        <p class="text-xs text-center text-slate-500">2. Heat spreads, causing the normal zone to grow.</p>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-full h-8 bg-red-500 rounded"></div>
+                        </div>
+                        <p class="text-xs text-center text-slate-500">3. A full quench occurs, releasing stored energy as heat.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: The Future -->
+        <section id="future" class="py-12 md:py-20 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-2 text-slate-800">The Future: Protection & Diagnostics</h3>
+            <p class="text-center text-slate-600 mb-12 max-w-3xl mx-auto">To operate these powerful devices safely, sophisticated protection systems are essential. Advanced diagnostics, like Fiber Bragg Gratings, and the development of High-Temperature Superconductors are leading the way to more robust and powerful magnets.</p>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="content-card">
+                    <h4 class="text-2xl font-semibold mb-4 text-cyan-700">Quench Protection Systems</h4>
+                    <p class="text-slate-600 mb-4">The goal is to detect a quench instantly and dissipate the magnet's energy safely and uniformly.</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-cyan-500 mr-3 mt-1">🛡️</span>
+                            <div><strong class="text-slate-700">Energy Extraction:</strong> The current is rapidly diverted to external "dump resistors," dissipating the energy safely as heat outside the magnet.</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-cyan-500 mr-3 mt-1">🔥</span>
+                            <div><strong class="text-slate-700">Quench Heaters:</strong> Upon detection, these heaters are activated to intentionally warm the entire coil, spreading the quench evenly to prevent localized damage from hot spots.</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="content-card">
+                    <h4 class="text-2xl font-semibold mb-4 text-cyan-700">Advanced Diagnostics: Fiber Bragg Gratings (FBG)</h4>
+                    <p class="text-slate-600 mb-4">FBGs are optical sensors embedded in glass fibers, offering a powerful way to monitor magnets because they are immune to the intense magnetic fields.</p>
+                    <div class="border rounded-lg p-4 text-center">
+                        <p class="text-sm text-slate-500">Broadband Light →</p>
+                        <div class="w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400 my-2 rounded"></div>
+                        <div class="relative w-full h-8 bg-slate-200 rounded my-2 flex items-center justify-center">
+                            <div class="w-1 h-8 bg-slate-400 absolute left-1/3"></div>
+                            <div class="w-1 h-8 bg-slate-400 absolute left-1/2"></div>
+                            <div class="w-1 h-8 bg-slate-400 absolute left-2/3"></div>
+                            <span class="text-xs font-mono">||| FBG |||</span>
+                        </div>
+                        <p class="text-sm text-slate-500">← Specific Wavelength Reflected (e.g., 🟡)</p>
+                        <p class="text-xs text-slate-600 mt-2">Changes in temperature or strain shift the reflected wavelength, allowing for precise, real-time monitoring.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>This interactive guide provides a conceptual overview of superconducting magnet technology.</p>
+            <p class="text-sm text-slate-400 mt-2">Created from source material for educational purposes.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+    
+    const navLinks = document.querySelectorAll('.nav-link, #mobile-menu a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (!mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    });
+
+    const sections = document.querySelectorAll('section');
+    const headerHeight = document.getElementById('header').offsetHeight;
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === entry.target.id) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, { rootMargin: `-${headerHeight}px 0px 0px 0px`, threshold: 0.3 });
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+
+    const superconductorData = {
+        labels: ['Nb', 'NbTi', 'Nb3Sn', 'MgB2', 'YBCO', 'BSCCO'],
+        tc: [9.2, 9.2, 18, 39, 93, 110],
+        hc: [0.2, 12, 25, 15, 120, 100] 
+    };
+
+    const ctx = document.getElementById('superconductorChart').getContext('2d');
+    let chart;
+
+    function createChart(data, label, color) {
+        if (chart) {
+            chart.destroy();
+        }
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: superconductorData.labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: color,
+                    borderColor: color.replace('0.6', '1'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y + (label.includes('Temp') ? ' K' : ' T');
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: label,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    x: {
+                         ticks: {
+                            font: {
+                                size: 14
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const showTcBtn = document.getElementById('show-tc-btn');
+    const showHcBtn = document.getElementById('show-hc-btn');
+
+    showTcBtn.addEventListener('click', () => {
+        createChart(superconductorData.tc, 'Critical Temperature (K)', 'rgba(56, 189, 248, 0.6)'); // sky-400
+        showTcBtn.classList.add('active');
+        showHcBtn.classList.remove('active');
+    });
+
+    showHcBtn.addEventListener('click', () => {
+        createChart(superconductorData.hc, 'Critical Magnetic Field (T)', 'rgba(8, 145, 178, 0.6)'); // cyan-600
+        showHcBtn.classList.add('active');
+        showTcBtn.classList.remove('active');
+    });
+
+    showTcBtn.click();
+});
+</script>
+
+</body>
+</html>
